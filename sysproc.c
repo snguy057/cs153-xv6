@@ -18,7 +18,8 @@ sys_exit(void)
 {
   int status = 0;
   argint(0, &status);
-  return exit(status);
+  exit(status);
+  return 0;
 }
 
 int
