@@ -18,7 +18,7 @@ sys_exit(void)
 {
   int status = 0;
   argint(0, &status);
-  return exit(status);  // not reached
+  return exit(status);
 }
 
 int
