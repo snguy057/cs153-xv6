@@ -26,8 +26,14 @@ int
 sys_wait(void)
 {
   int* status;
-  //argptr(0);
-  return wait(*status);
+  argptr(0, (char**) &status, sizeof(int*));
+  return wait(status);
+}
+
+int
+sys_waitpid(void)
+{
+  return 0;
 }
 
 int
