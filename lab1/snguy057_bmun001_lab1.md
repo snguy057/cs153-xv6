@@ -1,6 +1,7 @@
 Lab 1 Report
 ============
 Steven Nguyen - snguy057
+
 Brittney Mun - bmun001
 
 ## Changes
