@@ -317,8 +317,45 @@ wait(int *status)
 
 int
 waitpid(int pid, int *status, int options)
-{
-  return 0;
+{ 
+  struct proc *p;
+  int pidFound; // pid; //no longer need pid
+  struct proc *curproc = myproc();
+  
+  acquire(&ptable.lock);
+  for(;;){
+    // Scan through table looking for the exited process.
+    pidFound = 0;
+    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+      if(p->pid != pid) //check if pid of process is the one we are
+        continue;       // waiting for else continue searching.
+      pidFound = 1;     // found the process!
+      if(p->state == ZOMBIE){
+        // Found one.
+        //pid = p->pid; // we know this from the function call
+        kfree(p->kstack);
+        p->kstack = 0;
+        freevm(p->pgdir);
+        p->pid = 0;
+        p->parent = 0;
+        p->name[0] = 0;
+        p->killed = 0;
+        p->state = UNUSED;
+	*status = p->exitStatus; // Retrieve process's exit status
+        release(&ptable.lock);
+        return pid;
+      }
+    }
+
+    // No point waiting if we don't have any children.
+    if(!pidFound || curproc->killed){
+      release(&ptable.lock);
+      return -1;
+    }
+
+    // Wait for children to exit.  (See wakeup1 call in proc_exit.)
+    sleep(curproc, &ptable.lock);  //DOC: wait-sleep
+  }
 }
 
 //PAGEBREAK: 42
