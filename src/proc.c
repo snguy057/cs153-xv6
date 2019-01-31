@@ -224,6 +224,7 @@ fork(void)
 // Exit the current process.  Does not return.
 // An exited process remains in the zombie state
 // until its parent calls wait(&status) to find out it exited.
+// Lab1: saves status of the exited process
 void
 exit(int status)
 {
@@ -261,7 +262,7 @@ exit(int status)
     }
   }
 
-  // Save process's exit status so parent can retrieve
+  // Lab1: Save process's exit status so parent can retrieve
   curproc->exitStatus = status;
 
   // Jump into the scheduler, never to return.
@@ -272,6 +273,7 @@ exit(int status)
 
 // Wait for a child process to exit and return its pid.
 // Return -1 if this process has no children.
+// Lab1: Changed to return child's exit status
 int
 wait(int *status)
 {
@@ -298,7 +300,7 @@ wait(int *status)
         p->name[0] = 0;
         p->killed = 0;
         p->state = UNUSED;
-	*status = p->exitStatus; // Retrieve child's exit status
+	*status = p->exitStatus; //L1: Retrieve child's exit status
         release(&ptable.lock);
         return pid;
       }
@@ -315,6 +317,10 @@ wait(int *status)
   }
 }
 
+// Lab 1
+// Wait for a process with a specific pid to exit
+// Return -1 if PID is not found
+// Implemented WNOHANG
 int
 waitpid(int pid, int *status, int options)
 { 
@@ -328,9 +334,9 @@ waitpid(int pid, int *status, int options)
     pidFound = 0;
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
       if(p->pid != pid) //check if pid of process is the one we are
-        continue;       // waiting for else continue searching.
+        continue;       //     waiting for else continue searching.
       pidFound = 1;     // found the process!
-      if(p->state == ZOMBIE){
+      if(p->state == ZOMBIE){ // process has exited
         // Found one.
         //pid = p->pid; // we know this from the function call
         kfree(p->kstack);
@@ -355,8 +361,8 @@ waitpid(int pid, int *status, int options)
     
     // WNOHANG, if PID was found and the child has not exited yet
     if(options == 1 && pidFound == 1) {
-      release(&ptable.lock);
-      *status = 42; // Has not exited yet
+      release(&ptable.lock); // release lock
+      *status = -1; // Has not exited yet
       return 0; // 
     }
 

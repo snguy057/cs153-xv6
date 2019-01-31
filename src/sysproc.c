@@ -16,6 +16,7 @@ sys_fork(void)
 int
 sys_exit(void)
 {
+  // Lab1: Added to return status
   int status = 0;
   argint(0, &status);
   exit(status);
@@ -25,11 +26,13 @@ sys_exit(void)
 int
 sys_wait(void)
 {
+  // Lab 1: Added to return status
   int* status;
   argptr(0, (char**) &status, sizeof(int*));
   return wait(status);
 }
 
+// Lab 1: New syscall that waits on a specific PID
 int
 sys_waitpid(void)
 {
