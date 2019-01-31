@@ -347,13 +347,20 @@ waitpid(int pid, int *status, int options)
       }
     }
 
-    // No point waiting if we don't have any children.
+    // No point waiting if process does not exist.
     if(!pidFound || curproc->killed){
       release(&ptable.lock);
       return -1;
     }
+    
+    // WNOHANG, if PID was found and the child has not exited yet
+    if(options == 1 && pidFound == 1) {
+      release(&ptable.lock);
+      *status = 42; // Has not exited yet
+      return 0; // 
+    }
 
-    // Wait for children to exit.  (See wakeup1 call in proc_exit.)
+    // Wait for process to exit.  (See wakeup1 call in proc_exit.)
     sleep(curproc, &ptable.lock);  //DOC: wait-sleep
   }
 }
