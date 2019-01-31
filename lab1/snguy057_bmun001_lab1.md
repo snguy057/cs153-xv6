@@ -13,9 +13,11 @@ In proc struct
 Changes to exit function:
 * Line 229: Changed exit(void) to exit(int status) // Passed in exit status
 * Line 226: Added curproc->exitStatus = status; // Saves exit status to the proc struct
+
 Changes to wait function
 * Line 228: changed wait(void) to wait(int *status) // variable to save child’s status
 * Line 303: added *status = p->exitStatus; // Saves child’s exit status to status
+
 Implemented waitpid with WNOHANG option. Most of the code copied from wait().
 * Line 328: changed havekids to pidFound // naming
 * Line 328: removed pid, not necessary anymore
@@ -28,6 +30,7 @@ Changes to sys_exit
 * Line 20: added status to read in the process's exit status
 * Line 21: use argint to get status
 * Line 22: changed exit() to exit(status), calls exit function
+
 Changes to sys_wait
 * Line 30: added status
 * Line 31: use argptr to get pointer of status variable
