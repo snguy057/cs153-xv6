@@ -223,7 +223,7 @@ fork(void)
 
 // Exit the current process.  Does not return.
 // An exited process remains in the zombie state
-// until its parent calls wait() to find out it exited.
+// until its parent calls wait(&status) to find out it exited.
 void
 exit(int status)
 {
@@ -249,7 +249,7 @@ exit(int status)
 
   acquire(&ptable.lock);
 
-  // Parent might be sleeping in wait().
+  // Parent might be sleeping in wait(&status).
   wakeup1(curproc->parent);
 
   // Pass abandoned children to init.
@@ -260,6 +260,9 @@ exit(int status)
         wakeup1(initproc);
     }
   }
+
+  // Save process's exit status so parent can retrieve
+  curproc->exitStatus = status;
 
   // Jump into the scheduler, never to return.
   curproc->state = ZOMBIE;
@@ -295,6 +298,7 @@ wait(int *status)
         p->name[0] = 0;
         p->killed = 0;
         p->state = UNUSED;
+	*status = p->exitStatus; // Retrieve child's exit status
         release(&ptable.lock);
         return pid;
       }
@@ -303,7 +307,6 @@ wait(int *status)
     // No point waiting if we don't have any children.
     if(!havekids || curproc->killed){
       release(&ptable.lock);
-      //*status = ;
       return -1;
     }
 
