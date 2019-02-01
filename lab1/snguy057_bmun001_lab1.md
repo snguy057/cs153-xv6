@@ -29,10 +29,6 @@ Implemented waitpid with WNOHANG option. Most of the code copied from wait().
 
 ![waitpid](waitpid.PNG)
 
-### proc.h
-In proc struct:
-* Line 52: added int exitStatus //new variable for storing the status's exit status
-
 ### sysproc.c
 Changes to sys_exit
 * Line 20: added status to read in the process's exit status
@@ -62,6 +58,10 @@ Added sys_waitpid(void)
 ### syscall.c
 * Line 106: added extern int sys_waitpid(void);
 * Line 130: added [SYS_waitpid] sys_waitpid
+
+### proc.h
+In proc struct:
+* Line 52: added int exitStatus //new variable for storing the status's exit status
 
 ### syscall.h
 * Line 23: added define for waitpid
