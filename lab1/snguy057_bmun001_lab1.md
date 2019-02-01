@@ -6,10 +6,6 @@ Brittney Mun - bmun001
 
 ## Changes
 
-### proc.h
-In proc struct:
-* Line 52: added int exitStatus //new variable for storing the status's exit status
-
 ### proc.c
 Changes to exit function:
 * Line 229: Changed exit(void) to exit(int status) // Passed in exit status
@@ -20,11 +16,22 @@ Changes to wait function:
 * Line 303: added *status = p->exitStatus; // Saves child’s exit status to status
 
 Implemented waitpid with WNOHANG option. Most of the code copied from wait().
+* Lines 320-367 Implemented here
 * Line 328: changed havekids to pidFound // naming
 * Line 328: removed pid, not necessary anymore
 * Line 334,338: changed havekids to pidFound
 * Line 336: changed to if(p->pid == pid) //checks if the process’s pid is the pid we are waiting on.
 * Lines 363-367: Implemented WNOHANG
+
+![exit](exit.PNG)
+
+![wait](wait.PNG)
+
+![waitpid](waitpid.PNG)
+
+### proc.h
+In proc struct:
+* Line 52: added int exitStatus //new variable for storing the status's exit status
 
 ### sysproc.c
 Changes to sys_exit
@@ -40,15 +47,17 @@ Changes to sys_wait
 Added sys_waitpid(void)
 * Lines 36-46: Implemented here
 
+![sysproc](sysproc.PNG)
+
 ### defs.h
 * Line 107: exit() to exit(int)
 * Line 120: wait() to wait(int\*)
-* Line 212: added waitpid(int,int\*,int)
+* Line 212: added waitpid(int, int\*, int)
 
 ### user.h
 * Line 6: exit() to exit(int)
-* Line 7: wait() to wait(int*)
-* Line 8: added int waitpid(int,int\*,int)
+* Line 7: wait() to wait(int\*)
+* Line 8: added int waitpid(int, int\*, int)
 
 ### syscall.c
 * Line 106: added extern int sys_waitpid(void);
@@ -60,3 +69,28 @@ Added sys_waitpid(void)
 ### usys.S
 * Line 32: added syscall for waitpid
 
+### exit() -> exit(0)
+Changed in:
+* cat.c
+* echo.c
+* forktest.c
+* grep.c
+* init.c
+* kill.c
+* ln.c
+* ls.c
+* mkdir.c
+* proc.c
+* rm.c
+* sh.c
+* stressfs.c
+* trap.c
+* usertests.c
+* wc.c
+* zombie.c
+
+### wait() -> wait(0)
+Changed in:
+* sh.c
+* stressfs.c
+* usertests.c
