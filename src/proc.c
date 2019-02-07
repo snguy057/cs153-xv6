@@ -241,7 +241,7 @@ exit(int status)
       fileclose(curproc->ofile[fd]);
       curproc->ofile[fd] = 0;
     }
-  }
+   = 0}
 
   begin_op();
   iput(curproc->cwd);
@@ -300,7 +300,7 @@ wait(int *status)
         p->name[0] = 0;
         p->killed = 0;
         p->state = UNUSED;
-	*status = p->exitStatus; //L1: Retrieve child's exit status
+	      *status = p->exitStatus; //L1: Retrieve child's exit status
         release(&ptable.lock);
         return pid;
       }
@@ -347,7 +347,7 @@ waitpid(int pid, int *status, int options)
         p->name[0] = 0;
         p->killed = 0;
         p->state = UNUSED;
-	*status = p->exitStatus; // Retrieve process's exit status
+      	*status = p->exitStatus; // Retrieve process's exit status
         release(&ptable.lock);
         return pid;
       }
@@ -386,6 +386,9 @@ scheduler(void)
   struct cpu *c = mycpu();
   c->proc = 0;
   
+  // Lab2: for finding the highest priority
+  struct proc *highest = NULL;
+
   for(;;){
     // Enable interrupts on this processor.
     sti();
@@ -393,23 +396,55 @@ scheduler(void)
     // Loop over process table looking for process to run.
     acquire(&ptable.lock);
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+      // If not runnable, skip
       if(p->state != RUNNABLE)
         continue;
+      
+      // Set the first runnable processss to highest
+      // when highest
+      if(highest == NULL) {
+        highest = p;
+      }
 
-      // Switch to chosen process.  It is the process's job
-      // to release ptable.lock and then reacquire it
-      // before jumping back to us.
-      c->proc = p;
-      switchuvm(p);
-      p->state = RUNNING;
-
-      swtch(&(c->scheduler), p->context);
-      switchkvm();
-
-      // Process is done running for now.
-      // It should have changed its p->state before coming back.
-      c->proc = 0;
+      // If runnable, check if its priority is higher than
+      // the current highest, if so set to highest
+      // If priority is equal, select the first process checked
+      if(p->priority > highest->priority) {
+        // Lab 2 Bonus 1: highest is no longer highest priority so
+        // it will wait and we can "age" it by +1
+        highest->priority = highest->priority + 1;
+        highest = p;
+      }
+      // Lab 2 Bonus 1: Aging priority
+      // If p->priority < highest->priority, p will be waiting
+      // thus we can "age" it by +1
+      else if (p->priority <= highest->priority) {
+        p->priority = p->priority + 1;
+      }
     }
+    
+    // Lab 2 Bonus 1: Process will run, thus we decrease its
+    // priority by 1.
+    if(highest->priority - 1 < 0) {
+      highest->priority = 0;
+    }    
+    else {
+      highest->priority = highest->priority - 1;
+    }
+    // Switch to chosen process.  It is the process's job
+    // to release ptable.lock and then reacquire it
+    // before jumping back to us.
+    c->proc = highest;
+    switchuvm(highest);
+    highest->state = RUNNING;
+
+    swtch(&(c->scheduler), highest->context);
+    switchkvm();
+
+    // Process is done running for now.
+    // It should have changed its highest->state before coming back.
+    c->proc = 0;
+    
     release(&ptable.lock);
 
   }
@@ -591,4 +626,27 @@ procdump(void)
     }
     cprintf("\n");
   }
+}
+
+void
+setpriority(int priority)
+{
+  struct proc *curproc = myproc();
+  
+  // Lock ptable
+  acquire(&ptable.lock);
+
+  // Set priority, if out of bounds set to min/max 
+  if(priority < 0) { 
+    curproc->priority = 0;
+  }
+  else if(priority > 31) {
+    curproc->priority = 31;  
+  }
+  else {
+    curproc->priority = priority;  
+  }
+
+  // Release ptable lock  
+  release(&ptable.lock);
 }

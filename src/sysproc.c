@@ -108,3 +108,13 @@ sys_uptime(void)
   release(&tickslock);
   return xticks;
 }
+
+// Lab 2: set the priority of the current process.
+int
+sys_setpriority(void)
+{
+  int priority = 0;
+  argint(0, &priority);
+  setpriority(priority);
+  return 0;
+}
