@@ -11,7 +11,6 @@ Changed CPUs from 2 to 1 within the ifndef statement.
 ### defs.h
 Added a call to the setpriority function from proc.c.
 * Line 124: Created call to setpriority function.
-TODO: Screenshots of code
 
 ### proc.c
 Replace round robin scheduler with priority scheduler
@@ -20,7 +19,9 @@ Replace round robin scheduler with priority scheduler
 * Lines 405 - 446: Implemented priority scheduler in place of round robin scheduler.
 * Lines 432 - 436: BONUS 1 - Implemenation of process aging.
 * Lines 631 - 652: Implementation of setpriority function.
-TODO: Screenshots of code
+![scheduler](scheduler.PNG)
+
+![setpriority](setpriority.PNG)
 
 ### proc.h
 Added priority variable to be used within priority scheduler.
@@ -30,7 +31,7 @@ Added priority variable to be used within priority scheduler.
 Added system call to the priority scheduler.
 * Line 107: Initialize sys call.
 * Line 132: Add sys call.
-TODO
+
 
 ### syscall.h
 Defined value to represent setpriority system call within syscall.c
@@ -39,7 +40,7 @@ Defined value to represent setpriority system call within syscall.c
 ### sysproc.c.
 Created system call function for setpriority.
 * Line 113 - 120: Implementation of function.
-TODO
+![sysproc_c](sysproc_c.PNG)
 
 ### user.h
 Added call
