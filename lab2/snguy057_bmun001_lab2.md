@@ -19,6 +19,7 @@ Replace round robin scheduler with priority scheduler
 * Lines 405 - 446: Implemented priority scheduler in place of round robin scheduler.
 * Lines 432 - 436: BONUS 1 - Implemenation of process aging.
 * Lines 631 - 652: Implementation of setpriority function.
+
 ![scheduler](scheduler.PNG)
 
 ![setpriority](setpriority.PNG)
@@ -40,6 +41,7 @@ Defined value to represent setpriority system call within syscall.c
 ### sysproc.c.
 Created system call function for setpriority.
 * Line 113 - 120: Implementation of function.
+
 ![sysproc_c](sysproc_c.PNG)
 
 ### user.h
