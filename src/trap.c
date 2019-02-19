@@ -51,6 +51,13 @@ trap(struct trapframe *tf)
     if(cpuid() == 0){
       acquire(&tickslock);
       ticks++;
+      
+      // If the current process is running
+      // Increment the running time
+      if(myproc() && myproc()->state == RUNNING) {
+        myproc()->runTime++;
+      }
+
       wakeup(&ticks);
       release(&tickslock);
     }

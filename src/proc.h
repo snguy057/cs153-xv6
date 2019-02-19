@@ -51,6 +51,8 @@ struct proc {
   char name[16];               // Process name (debugging)
   int exitStatus;     	       // Saves status of the exited process
   int priority;                // Priority of the current process
+  int startTime;               // Creation Time
+  int runTime;                 // Runtime
 };
 
 // Process memory is laid out contiguously, low addresses first:

@@ -88,6 +88,13 @@ allocproc(void)
 found:
   p->state = EMBRYO;
   p->pid = nextpid++;
+  
+  // Lab 2: Default priority of 10
+  p->priority = 10;
+
+  // Lab 2 Bonus 3: Default time for process
+  p->startTime = ticks; //creation time
+  p->runTime = 0;       //running time
 
   release(&ptable.lock);
 
@@ -215,6 +222,13 @@ fork(void)
   acquire(&ptable.lock);
 
   np->state = RUNNABLE;
+  
+  // Lab 2 Bonus 2: Priority Inheritance
+  // Child's starts at the same value as the parent
+    //Commented code for testing purposes
+      //cprintf("Child's starting priority: %d. Parent's priority: %d\n", np->priority, curproc->priority);
+  np->priority = curproc->priority;
+      //cprintf("Child's inherited priority: %d.\n", np->priority);
 
   release(&ptable.lock);
 
@@ -241,7 +255,7 @@ exit(int status)
       fileclose(curproc->ofile[fd]);
       curproc->ofile[fd] = 0;
     }
-   = 0}
+  }
 
   begin_op();
   iput(curproc->cwd);
@@ -264,6 +278,20 @@ exit(int status)
 
   // Lab1: Save process's exit status so parent can retrieve
   curproc->exitStatus = status;
+  
+  // Lab2: Bonus 3: Print turnaround time and wait time
+  // Get lock on ticks
+  acquire(&tickslock);
+  // Calculate turnaround time and wait time
+  int turnaround = ticks - curproc->startTime;
+  int waitTime = turnaround - curproc->runTime;
+  cprintf("Process PID: %d, had a turnaround time of %d ticks and a wait time of %d ticks \n", curproc->pid, turnaround, waitTime);
+  
+  // Testing priority aging/inheritance
+  //cprintf("Process PID: %d, ending priority %d\n", curproc->pid, curproc->priority);
+
+  // Release lock on ticks
+  release(&tickslock);     
 
   // Jump into the scheduler, never to return.
   curproc->state = ZOMBIE;
@@ -387,12 +415,13 @@ scheduler(void)
   c->proc = 0;
   
   // Lab2: for finding the highest priority
-  struct proc *highest = NULL;
-
+  struct proc *highest;
+  struct proc *cur;
+  
   for(;;){
     // Enable interrupts on this processor.
     sti();
-
+    
     // Loop over process table looking for process to run.
     acquire(&ptable.lock);
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
@@ -401,52 +430,56 @@ scheduler(void)
         continue;
       
       // Set the first runnable processss to highest
-      // when highest
-      if(highest == NULL) {
-        highest = p;
+      highest = p;  
+      
+      // For the remaining processes find the highest
+      for(cur = p + 1; cur < &ptable.proc[NPROC]; cur++) {
+        if(cur->state != RUNNABLE)
+          continue;     
+        // If runnable, check if its priority is higher than
+        // the current highest, if so set to highest
+        // If priority is equal, select the first process checked
+        if(cur->priority < highest->priority) {
+          highest = cur;
+        } 
+      }
+      
+      // Lab 2 Bonus 1: Aging Priority
+      // For all the processes that are NOT our highest priority,
+      // age by -1
+      for(cur = ptable.proc; cur < &ptable.proc[NPROC]; cur++){
+        if (cur != highest) { 
+          if(cur->priority == 0) { ;
+          }
+          else{
+            cur->priority = cur->priority - 1;
+          }      
+        }
       }
 
-      // If runnable, check if its priority is higher than
-      // the current highest, if so set to highest
-      // If priority is equal, select the first process checked
-      if(p->priority > highest->priority) {
-        // Lab 2 Bonus 1: highest is no longer highest priority so
-        // it will wait and we can "age" it by +1
+      // Lab 2 Bonus 1: Process will run, thus we decrease its
+      // priority by 1.
+      if(highest->priority == 31) { ;
+      }      
+      else {
         highest->priority = highest->priority + 1;
-        highest = p;
       }
-      // Lab 2 Bonus 1: Aging priority
-      // If p->priority < highest->priority, p will be waiting
-      // thus we can "age" it by +1
-      else if (p->priority <= highest->priority) {
-        p->priority = p->priority + 1;
-      }
-    }
-    
-    // Lab 2 Bonus 1: Process will run, thus we decrease its
-    // priority by 1.
-    if(highest->priority - 1 < 0) {
-      highest->priority = 0;
-    }    
-    else {
-      highest->priority = highest->priority - 1;
-    }
-    // Switch to chosen process.  It is the process's job
-    // to release ptable.lock and then reacquire it
-    // before jumping back to us.
-    c->proc = highest;
-    switchuvm(highest);
-    highest->state = RUNNING;
 
-    swtch(&(c->scheduler), highest->context);
-    switchkvm();
+      // Switch to chosen process.  It is the process's job
+      // to release ptable.lock and then reacquire it
+      // before jumping back to us.
+      c->proc = highest;
+      switchuvm(highest);
+      highest->state = RUNNING;
 
-    // Process is done running for now.
-    // It should have changed its highest->state before coming back.
-    c->proc = 0;
-    
+      swtch(&(c->scheduler), highest->context);
+      switchkvm();
+
+      // Process is done running for now.
+      // It should have changed its highest->state before coming back.
+      c->proc = 0; 
+    } 
     release(&ptable.lock);
-
   }
 }
 
@@ -628,25 +661,31 @@ procdump(void)
   }
 }
 
+// Lab 2: Set Priority function
+// Allows user to set the priority of the currently running process
+// within the bounds of 0 and 31 where 0 is highest and 31 is lowest
 void
-setpriority(int priority)
+setpriority(int p)
 {
-  struct proc *curproc = myproc();
-  
+  struct proc *curproc = myproc(); 
+   
   // Lock ptable
   acquire(&ptable.lock);
 
   // Set priority, if out of bounds set to min/max 
-  if(priority < 0) { 
+  if(p < 0) { 
     curproc->priority = 0;
   }
-  else if(priority > 31) {
+  else if(p > 31) {
     curproc->priority = 31;  
   }
   else {
-    curproc->priority = priority;  
+    curproc->priority = p;  
   }
 
   // Release ptable lock  
   release(&ptable.lock);
+  
+  // In case new priority is no longer highest
+  yield();
 }
