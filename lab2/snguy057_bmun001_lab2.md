@@ -24,6 +24,7 @@ Replace round robin scheduler with priority scheduler
 * Lines 418 - 419: Declared pointers to current and highest priority process.
 * Lines 433 - 482: Implemented priority scheduler over round robin scheduler. Contains bonuses within implementation.
 * Lines 664 - 690: Implemented setpriority function.
+
 ![lab2_dec](lab2_dec.PNG)
 
 ![lab2_part1](lab2_part1.PNG)
@@ -78,7 +79,7 @@ Created system call function for setpriority.
 Added function to increase runTime counter for bonus 3.
 * Lines 55 - 60: If statement incrementing process run time is current process is still running.
 
-![trap_bonus3](trap_bonus3)
+![trap_bonus3](trap_bonus3.PNG)
 
 ### user.h
 Added system call.
