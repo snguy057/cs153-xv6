@@ -52,6 +52,7 @@ trap(struct trapframe *tf)
       acquire(&tickslock);
       ticks++;
       
+      // Lab 2 Bonus 3: Increment Runtime time
       // If the current process is running
       // Increment the running time
       if(myproc() && myproc()->state == RUNNING) {
