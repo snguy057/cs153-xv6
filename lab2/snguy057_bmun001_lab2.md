@@ -45,11 +45,9 @@ Created system call function for setpriority.
 ![sysproc_c](sysproc_c.PNG)
 
 ### user.h
-Added call
-* Line 27:
-TODO
+Added system call.
+* Line 27: Added system call.
 
-### user.c
-Added SYSCALL.
-* Line 33:
-TODO
+### usys.S
+Added SYSCALL to assembly file.
+* Line 33: Added SYSCALL to assembly file.
