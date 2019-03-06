@@ -226,9 +226,9 @@ fork(void)
   // Lab 2 Bonus 2: Priority Inheritance
   // Child's starts at the same value as the parent
     //Commented code for testing purposes
-      //cprintf("Child's starting priority: %d. Parent's priority: %d\n", np->priority, curproc->priority);
+      cprintf("\nChild's starting priority: %d. Parent's priority: %d\n", np->priority, curproc->priority);
   np->priority = curproc->priority;
-      //cprintf("Child's inherited priority: %d.\n", np->priority);
+      cprintf("Child's inherited priority: %d.\n", np->priority);
 
   release(&ptable.lock);
 
@@ -288,7 +288,7 @@ exit(int status)
   cprintf("Process PID: %d, had a turnaround time of %d ticks and a wait time of %d ticks \n", curproc->pid, turnaround, waitTime);
   
   // Testing priority aging/inheritance
-  //cprintf("Process PID: %d, ending priority %d\n", curproc->pid, curproc->priority);
+  cprintf("Process PID: %d, ending priority %d\n", curproc->pid, curproc->priority);
 
   // Release lock on ticks
   release(&tickslock);     
