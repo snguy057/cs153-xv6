@@ -199,6 +199,9 @@ fork(void)
   np->sz = curproc->sz;
   np->parent = curproc;
   *np->tf = *curproc->tf;
+  
+  // CS153 Lab 3: copy number of pages
+  np->pages = curproc->pages;
 
   // Clear %eax so that fork returns 0 in the child.
   np->tf->eax = 0;
