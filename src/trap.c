@@ -38,11 +38,11 @@ trap(struct trapframe *tf)
 {
   if(tf->trapno == T_SYSCALL){
     if(myproc()->killed)
-      exit(0);
+      exit();
     myproc()->tf = tf;
     syscall();
     if(myproc()->killed)
-      exit(0);
+      exit();
     return;
   }
 
@@ -51,14 +51,6 @@ trap(struct trapframe *tf)
     if(cpuid() == 0){
       acquire(&tickslock);
       ticks++;
-      
-      // Lab 2 Bonus 3: Increment Runtime time
-      // If the current process is running
-      // Increment the running time
-      if(myproc() && myproc()->state == RUNNING) {
-        myproc()->runTime++;
-      }
-
       wakeup(&ticks);
       release(&tickslock);
     }
@@ -86,6 +78,19 @@ trap(struct trapframe *tf)
     lapiceoi();
     break;
 
+  // CS153 Lab 3: Page Fault
+  case T_PGFLT:
+    // Check if the address in rcr2 is in the next page
+    if ((rcr2() < PGROUNDUP(TOPSTACK - myproc()->pages * PGSIZE)) && (rcr2() > PGROUNDUP(TOPSTACK - (myproc()->pages+1)*PGSIZE))) { 
+      myproc()->pages++;
+      if (allocuvm(myproc()->pgdir, (TOPSTACK - myproc()->pages * PGSIZE), (TOPSTACK - (myproc()->pages - 1) * PGSIZE)) == 0) {
+        cprintf("case T_PGFLT from trap.c: allocuvm failed. Number of current allocated pages: %d\n", myproc()->pages);
+        exit();
+      }
+       cprintf("case T_PGFLT from trap.c: allocuvm succeeded. Number of pages allocated: %d\n", myproc()->pages);
+    }
+    break;
+
   //PAGEBREAK: 13
   default:
     if(myproc() == 0 || (tf->cs&3) == 0){
@@ -106,7 +111,7 @@ trap(struct trapframe *tf)
   // (If it is still executing in the kernel, let it keep running
   // until it gets to the regular system call return.)
   if(myproc() && myproc()->killed && (tf->cs&3) == DPL_USER)
-    exit(0);
+    exit();
 
   // Force process to give up CPU on clock tick.
   // If interrupts were on while locks held, would need to check nlock.
@@ -116,5 +121,5 @@ trap(struct trapframe *tf)
 
   // Check if the process has been killed since we yielded
   if(myproc() && myproc()->killed && (tf->cs&3) == DPL_USER)
-    exit(0);
+    exit();
 }

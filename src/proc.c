@@ -88,13 +88,6 @@ allocproc(void)
 found:
   p->state = EMBRYO;
   p->pid = nextpid++;
-  
-  // Lab 2: Default priority of 10
-  p->priority = 10;
-
-  // Lab 2 Bonus 3: Default time for process
-  p->startTime = ticks; //creation time
-  p->runTime = 0;       //running time
 
   release(&ptable.lock);
 
@@ -222,13 +215,6 @@ fork(void)
   acquire(&ptable.lock);
 
   np->state = RUNNABLE;
-  
-  // Lab 2 Bonus 2: Priority Inheritance
-  // Child's starts at the same value as the parent
-    //Commented code for testing purposes
-      cprintf("\nChild's starting priority: %d. Parent's priority: %d\n", np->priority, curproc->priority);
-  np->priority = curproc->priority;
-      cprintf("Child's inherited priority: %d.\n", np->priority);
 
   release(&ptable.lock);
 
@@ -237,10 +223,9 @@ fork(void)
 
 // Exit the current process.  Does not return.
 // An exited process remains in the zombie state
-// until its parent calls wait(&status) to find out it exited.
-// Lab1: saves status of the exited process
+// until its parent calls wait() to find out it exited.
 void
-exit(int status)
+exit(void)
 {
   struct proc *curproc = myproc();
   struct proc *p;
@@ -264,7 +249,7 @@ exit(int status)
 
   acquire(&ptable.lock);
 
-  // Parent might be sleeping in wait(&status).
+  // Parent might be sleeping in wait().
   wakeup1(curproc->parent);
 
   // Pass abandoned children to init.
@@ -276,23 +261,6 @@ exit(int status)
     }
   }
 
-  // Lab1: Save process's exit status so parent can retrieve
-  curproc->exitStatus = status;
-  
-  // Lab2: Bonus 3: Print turnaround time and wait time
-  // Get lock on ticks
-  acquire(&tickslock);
-  // Calculate turnaround time and wait time
-  int turnaround = ticks - curproc->startTime;
-  int waitTime = turnaround - curproc->runTime;
-  cprintf("Process PID: %d, had a turnaround time of %d ticks and a wait time of %d ticks \n", curproc->pid, turnaround, waitTime);
-  
-  // Testing priority aging/inheritance
-  cprintf("Process PID: %d, ending priority %d\n", curproc->pid, curproc->priority);
-
-  // Release lock on ticks
-  release(&tickslock);     
-
   // Jump into the scheduler, never to return.
   curproc->state = ZOMBIE;
   sched();
@@ -301,9 +269,8 @@ exit(int status)
 
 // Wait for a child process to exit and return its pid.
 // Return -1 if this process has no children.
-// Lab1: Changed to return child's exit status
 int
-wait(int *status)
+wait(void)
 {
   struct proc *p;
   int havekids, pid;
@@ -328,7 +295,6 @@ wait(int *status)
         p->name[0] = 0;
         p->killed = 0;
         p->state = UNUSED;
-	      *status = p->exitStatus; //L1: Retrieve child's exit status
         release(&ptable.lock);
         return pid;
       }
@@ -341,60 +307,6 @@ wait(int *status)
     }
 
     // Wait for children to exit.  (See wakeup1 call in proc_exit.)
-    sleep(curproc, &ptable.lock);  //DOC: wait-sleep
-  }
-}
-
-// Lab 1
-// Wait for a process with a specific pid to exit
-// Return -1 if PID is not found
-// Implemented WNOHANG
-int
-waitpid(int pid, int *status, int options)
-{ 
-  struct proc *p;
-  int pidFound; // pid; //no longer need pid
-  struct proc *curproc = myproc();
-  
-  acquire(&ptable.lock);
-  for(;;){
-    // Scan through table looking for the exited process.
-    pidFound = 0;
-    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-      if(p->pid != pid) //check if pid of process is the one we are
-        continue;       //     waiting for else continue searching.
-      pidFound = 1;     // found the process!
-      if(p->state == ZOMBIE){ // process has exited
-        // Found one.
-        //pid = p->pid; // we know this from the function call
-        kfree(p->kstack);
-        p->kstack = 0;
-        freevm(p->pgdir);
-        p->pid = 0;
-        p->parent = 0;
-        p->name[0] = 0;
-        p->killed = 0;
-        p->state = UNUSED;
-      	*status = p->exitStatus; // Retrieve process's exit status
-        release(&ptable.lock);
-        return pid;
-      }
-    }
-
-    // No point waiting if process does not exist.
-    if(!pidFound || curproc->killed){
-      release(&ptable.lock);
-      return -1;
-    }
-    
-    // WNOHANG, if PID was found and the child has not exited yet
-    if(options == 1 && pidFound == 1) {
-      release(&ptable.lock); // release lock
-      *status = -1; // Has not exited yet
-      return 0; // 
-    }
-
-    // Wait for process to exit.  (See wakeup1 call in proc_exit.)
     sleep(curproc, &ptable.lock);  //DOC: wait-sleep
   }
 }
@@ -414,72 +326,32 @@ scheduler(void)
   struct cpu *c = mycpu();
   c->proc = 0;
   
-  // Lab2: for finding the highest priority
-  struct proc *highest;
-  struct proc *cur;
-  
   for(;;){
     // Enable interrupts on this processor.
     sti();
-    
+
     // Loop over process table looking for process to run.
     acquire(&ptable.lock);
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-      // If not runnable, skip
       if(p->state != RUNNABLE)
         continue;
-      
-      // Set the first runnable processss to highest
-      highest = p;  
-      
-      // For the remaining processes find the highest
-      for(cur = p + 1; cur < &ptable.proc[NPROC]; cur++) {
-        if(cur->state != RUNNABLE)
-          continue;     
-        // If runnable, check if its priority is higher than
-        // the current highest, if so set to highest
-        // If priority is equal, select the first process checked
-        if(cur->priority < highest->priority) {
-          highest = cur;
-        } 
-      }
-      
-      // Lab 2 Bonus 1: Aging Priority
-      // For all the processes that are NOT our highest priority,
-      // age by -1
-      for(cur = ptable.proc; cur < &ptable.proc[NPROC]; cur++){
-        if (cur != highest) { 
-          if(cur->priority == 0) { ;
-          }
-          else{
-            cur->priority = cur->priority - 1;
-          }      
-        }
-      }
-
-      // Lab 2 Bonus 1: Process will run, thus we decrease its
-      // priority by 1.
-      if(highest->priority == 31) { ;
-      }      
-      else {
-        highest->priority = highest->priority + 1;
-      }
 
       // Switch to chosen process.  It is the process's job
       // to release ptable.lock and then reacquire it
       // before jumping back to us.
-      c->proc = highest;
-      switchuvm(highest);
-      highest->state = RUNNING;
+      c->proc = p;
+      switchuvm(p);
+      p->state = RUNNING;
 
-      swtch(&(c->scheduler), highest->context);
+      swtch(&(c->scheduler), p->context);
       switchkvm();
 
       // Process is done running for now.
-      // It should have changed its highest->state before coming back.
-      c->proc = 0; 
-    } 
+      // It should have changed its p->state before coming back.
+      c->proc = 0;
+    }
     release(&ptable.lock);
+
   }
 }
 
@@ -659,33 +531,4 @@ procdump(void)
     }
     cprintf("\n");
   }
-}
-
-// Lab 2: Set Priority function
-// Allows user to set the priority of the currently running process
-// within the bounds of 0 and 31 where 0 is highest and 31 is lowest
-void
-setpriority(int p)
-{
-  struct proc *curproc = myproc(); 
-   
-  // Lock ptable
-  acquire(&ptable.lock);
-
-  // Set priority, if out of bounds set to min/max 
-  if(p < 0) { 
-    curproc->priority = 0;
-  }
-  else if(p > 31) {
-    curproc->priority = 31;  
-  }
-  else {
-    curproc->priority = p;  
-  }
-
-  // Release ptable lock  
-  release(&ptable.lock);
-  
-  // In case new priority is no longer highest
-  yield();
 }
