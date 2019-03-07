@@ -6,28 +6,35 @@ Brittney Mun - bmun001
 
 ## Changes
 ### proc.h
-Removed status, runtime, start time, and priority variables
-* Line 52: Created uint pages, deleted 4 variables.
+* Line 52: Created uint pages
+
+![lab3_proch](lab3_proch.PNG)
 
 ### memlayout.h
-Defined top of stack address.
-* Line 12: Removed char pointer declaration.
+Defined top of stack address
 * Line 18: Defined memory address for top of stack.
 
+![lab3_memlayout](lab3_memlayout.PNG)
+
 ### proc.c
-Removed lab 2 content due to programming issues.
+Copied pages to child processes
+* Line 204: Copied pages to child process as well.
+
+![lab3_procc](lab3_procc.PNG)
 
 ### syscall.c
 Implemented Lab 3 by replacing cur-proc->sz with TOPSTACK throughout the file.
 * Line 24, 42, 45, 74: Use TOPSTACK instead of curproc->sz.
-* Line 115, 116: Syscall initialization.
-* Line 140, 141: Syscall call.
 
-![lab3_syscall](lab3_syscall.PNG)
+![lab3_syscall1](lab3_syscall1.PNG)
+
+![lab3_syscall2](lab3_syscall2.PNG)
+
+![lab3_syscall3](lab3_syscall3.PNG)
 
 ### vm.c
 Copies over information into virtual memory.
-* Lines 340 - 350: Loop in order to copy information onto the new stack.
+* Lines 340 - 352: Loop in order to copy information onto the new stack.
 
 ![lab3_vm](lab3_vm.PNG)
 
