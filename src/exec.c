@@ -100,6 +100,7 @@ exec(char *path, char **argv)
   
   // CS153 Lab 3: set number of pages to 1
   curproc->pages = 1;
+  cprintf("Initial number of pages by the process: %d\n", curproc->pages); //cs153 - Lab3
 
   switchuvm(curproc);
   freevm(oldpgdir);
